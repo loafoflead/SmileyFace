@@ -10,6 +10,8 @@ public class GameStatus {
 
 	private Game g;
 
+	public static int levelUpThreshold = 10;
+
 	public List<Item> inventory;
 
 	public GameStatus(Game gm) {
@@ -25,22 +27,39 @@ public class GameStatus {
 			baseSpeed = 1;
 			baseEvasion = 1;
 			baseResistance = 0;
+
 			byteCoin = 10;
 			byteCents = 0;
 			byteAmethyts = 0;
+
+			level = 0;
+			xp = 0;
 			//inventory.Add(new Item("|green|potion", "a potion", getEffect(EffectTypes.InstHealth, 1, 1)));
 		}
 		resetStats();
 	}
 
-	public void resetStats() {
+	/*public void resetStats() {
 		damage = baseDamage;
 		speed = baseSpeed;
 		evasion = baseEvasion;
 		resistance = baseResistance;
+	}*/
+
+	public void resetStats() {
+		damage = baseDamage * (1 + level / 10);
+		speed = baseSpeed * (1 + level / 10);
+		evasion = baseEvasion * (1 + level / 10);
+		resistance = baseResistance * (1 + level / 10);
 	}
 
-
+	public void levelUp() {
+		damage = baseDamage * (1 + level / 10);
+		speed = baseSpeed * (1 + level / 10);
+		evasion = baseEvasion * (1 + level / 10);
+		resistance = baseResistance * (1 + level / 10);
+		level ++;
+	}
 
 	public int dealDamage(float damage) {
 		float dmg = damage;
@@ -56,6 +75,15 @@ public class GameStatus {
 	}
 
 	public int addXp(int xp) {
+		int xps = xp;
+		while (xps > 0) {
+			this.xp ++;
+			xps --;
+			if (this.xp > (level == 0 ? 1 : level) * levelUpThreshold) {
+				levelUp();
+				this.xp = 0;
+			}
+		}
 		return 0;
 	}
 

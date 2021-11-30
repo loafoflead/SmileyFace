@@ -41,7 +41,7 @@ public class Enemy {
 
 	public Enemy(int basedmg, int basestr, int basespd,
 		int baseevas, int baseres, int maxhp,
-		string name, string desc, string effectimmune) {
+		string name, string desc, string effectimmune, int coinsGiven, int xpGiven) {
 		this.baseDmg = basedmg;
 		this.baseSpeed = basespd;
 		this.baseStrength = basestr;

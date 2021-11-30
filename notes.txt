@@ -3,3 +3,9 @@
 Enemy:
 	basehp, dmg, etc...
 	xp given, money given, rarity
+
+INSERT INTO Enemies(damage, strength, speed, evasion, resistance, maxhp, name, description, effectsimmune, coinsgiven, xpgiven) 
+VALUES(
+  2, 0, 2, 0, 0, 6, 'Blue Orc', 'A blue orc, it appears to want you very dead.', ' ', 10, 5);
+
+current enemy cmd!!!

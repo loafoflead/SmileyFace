@@ -116,6 +116,7 @@ public class Game {
 
 		currentShop = new Shop(itemsList);
 		running = true;
+		
 	}
 
 	public int yppos = 0;
