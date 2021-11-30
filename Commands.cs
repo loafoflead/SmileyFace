@@ -1,0 +1,549 @@
+using System;
+using System.Collections.Generic;
+using System.Collections;
+
+public class Commands {
+
+	private Game game;
+
+	public Commands(Game g) { 
+		game = g;
+	}
+
+
+
+	public struct CommandAndArgs {
+		public string command;
+		public int argCount;
+		public string helpMsg;
+
+		public CommandAndArgs(string cmd, int argc, string help) {
+			this.command = cmd;
+			this.argCount= argc;
+			this.helpMsg = help;
+		}
+	}
+
+	(string, int, string)[] commandList = new (string, int, string)[] {
+		("box", 1, "box <content>"), 
+		("cls", 0, " "), 
+		("quit", 0, " "),
+		("help", 0, "help + opt:<page number> + opt:<command>"),
+		("me", 0, " "),
+		("inv", 0, " "),
+		("run", 0, " "), ("exit", 0, "exit"), ("fight", 0, " "),
+		("shop", 0, " "), ("buy", 1, "buy <item name>"),
+		("sell", 1, "sell <item name>"),
+		("use", 1, "use <item>"),
+	};
+
+	(string, int, string)[] commandListCmd = new (string, int, string)[] {
+		("enemy", 0, "enemy + opt:<-v/verbose>/<-t/tags>"), ("echo", 1, "echo <message>"), 
+		("box", 1, "box opt:<-border:[char]> <content>"), ("recttest", 0, "recttest"),
+		("postest", 0, " "), ("hurt", 1, "hurt <float>"),
+		("pay", 1, "pay <byteCoins>.<byteCents>"), ("item", 0, ""),
+		("gamestate", 1, "gamestate <Fight/Idle/Shop>"),
+		("give", 1, "give <item tag>"), ("resetshop", 0, ""),
+		("dmg", 1, "dmg <float>"),
+	};
+
+	public string parseCommand(string s) {
+
+		if (string.IsNullOrEmpty(s)) {
+			return "\n";
+		}
+
+		string[] args = s.Split(" ");
+		int argv = args.Length;
+
+		string to_ret = "";
+
+		if (s.Length > 0) {
+			if (s[0] == '#') {
+				args[0] = args[0].Remove(0,1);
+				to_ret = parsePrivCmd(args, argv);
+			} else {
+				to_ret = parsePriv(args, argv);
+			}
+		}
+
+		
+		if (!string.IsNullOrEmpty(to_ret)) {
+			return to_ret;
+		}
+
+		return "";
+
+	}
+
+	private string parsePrivCmd(string[] args, int argv) {
+
+		foreach((string, int, string) cmnd in commandListCmd) {
+			if (args[0] == cmnd.Item1) {
+				if ((argv - 1) < cmnd.Item2) {
+					return "Too few arguments for command " + cmnd.Item1 + "! '" + cmnd.Item3 + "'";
+				}
+			}
+		}
+
+		switch(args[0]) {
+
+			case "help":
+			case "h":
+			case "?":
+				foreach((string, int, string) cmnd in commandListCmd) {
+					game.input.print(cmnd.Item1 + ": usage => '" + cmnd.Item3 + "'");
+				}
+				return "";
+
+			case "hurt":
+			case "damage":
+				try {
+					float dmg = float.Parse(args[1]);
+					game.status.dealDamage(dmg);
+					return "damaged player for |darkblue|" + dmg.ToString() + "|white|hp.";
+				} catch {
+					return "incorrect argument for command 'hurt': 'hurt <float>'";
+				}
+
+			case "dmg":
+				try {
+					float newdmg = float.Parse(args[1]);
+					game.status.damage = newdmg;
+					return "set player damage to |darkblue|" + newdmg.ToString() + "|white|dmg.";
+				} catch {
+					return "incorrect argument for command 'dmg': 'dmg <float>'";
+				}
+
+			case "pay":
+			case "donate":
+				try {
+					if (args[1].Contains('.')) {
+						string coinsStr = args[1].Split('.')[0];
+						string centsStr = args[1].Split('.')[1];
+						int coins = int.Parse(coinsStr);
+						int cents = int.Parse(centsStr);
+						game.status.payBytes(coins, cents);
+						return "paid player |magenta|" + coinsStr + "|white|.|darkmagenta|" + centsStr + "|white|B$!";
+					} else {
+						int money = int.Parse(args[1]);
+						game.status.payBytes(money, 0);
+						return "paid player |magenta|" + money.ToString() + "|white|B$!";
+					}
+				} catch {
+					return "incorrect argument for command 'pay': 'pay <byteCoin>.<byteCents>'";
+				}
+
+			case "give":
+				Item itemret = game.itemsList.Find(Item => Item.tag == args[1]);
+				if (itemret == null) {
+					itemret = game.itemsList.Find(Item => Item.name.ToLower() == args[1].ToLower());
+				}
+				if (itemret != null) {
+					game.status.inventory.Add(itemret);
+					return "added " + itemret.name + " to the player's inventory.";
+				}
+				else {
+					return "couldn't find item " + args[1] + ".";
+				}
+
+			case "enemy":	
+				if (argv > 1) {
+					switch(getFlags(args)[0]) {
+						case "v":
+						case "verbose":
+							foreach(Enemy en in game.enemiesList) {
+								game.input.print(en.name);
+								game.input.print(en.description);
+								game.input.print(en.tag);
+								game.input.print(en.Hp.ToString());
+								game.input.print(en.Dmg.ToString());
+							}
+							break;
+						case "t":
+						case "tags":
+							foreach(Enemy en in game.enemiesList) {
+								game.input.print(en.tag);
+							}
+							break;
+						default:
+							return "unknown flag for command 'enemy', flags are: '-v/verbose, -t/tags, ...";
+					}
+					return "";
+				} else {
+					foreach(Enemy en in game.enemiesList) {
+						game.input.print(en.name);
+					}
+				}
+				return "";
+
+			case "item":
+				if (hasFlags(args)) {
+					if (getFlags(args)[0].Contains("t")) {
+						foreach(Item it in game.itemsList) {
+							game.input.print(it.tag);
+						}
+					}
+				} else {
+					foreach(Item it in game.itemsList) {
+						game.input.print(it.name);
+					}
+				}
+				return "";
+
+			case "gamestate":
+				switch(args[1].ToLower()) {
+					case "fight":
+						game.State = Game.GameState.Fight;
+						return "gamestate is now: " + args[1];;
+
+					case "idle":
+						game.State = Game.GameState.Idle;
+						return "gamestate is now: " + args[1];;
+
+					case "shop":
+						game.State = Game.GameState.Shop;
+						return "gamestate is now: " + args[1];
+
+					default:
+						return "unknown argument '" + args[1] + "'.";
+				}
+
+			case "resetshop":
+				game.currentShop = new Shop(game.itemsList);
+				return "reset shop";
+
+
+			case "boxtest":
+				game.input.drawBox("\nhello \nworld", 12, 10);
+				return "";
+
+			case "recttest":
+				game.input.drawRect(10, 10, 13, 13);
+				return "";
+
+			case "postest":
+				game.input.print("|red,blue|hi", 0, 0);
+				return "pos_test";
+
+			case "echo":
+				if (hasFlags(args)) {
+					if (getFlags(args)[0].Contains("pos:")) {
+						string pos = getFlags(args)[0].Split(':')[1];
+						if (string.IsNullOrEmpty(pos) || !pos.Contains(',')) {
+							return "incorrect use of -pos: flag: 'echo -pos:<x>,<y> <content>'";
+						}
+						string[] xy = pos.Split(',');
+						try {
+							int x = int.Parse(xy[0]);
+							int y = int.Parse(xy[1]);
+							game.input.print(String.Join(' ', args, 1, args.Length), x, y);
+						} catch {
+							return "'" + args[1] + "'incorrect use of -pos: flag: 'echo -pos:<x - must be non null>, <y - the same> <content>'";
+						}
+					}
+					return "";
+				}
+
+				game.input.print(String.Join(' ', args, 1, args.Length - 1));
+				return "";
+
+			case "box":
+				if(!string.IsNullOrEmpty(getFlags(args)[0])) {
+					if (getFlags(args)[0].Contains("border:")) {
+						char bord = ' ';
+						try {
+							bord = char.Parse(args[1].Split(":")[1]);
+						} catch {
+							return "incorrect format for border character: '" + args[1].Split(":")[0] + "', must be 1 char and non-null";
+						}
+						game.input.drawBox(String.Join(" ", args).Remove(0, args[0].Length + args[1].Length + 2), bord);
+					} else if (String.Join("", getFlags(args)).Contains("pos:")) {
+						string pos = String.Join("/", getFlags(args));
+						pos = pos.Split(':',2)[1];
+						if (getFlags(args).Length > 1) {
+							pos = pos.Split("pos:")[1];
+							if (pos.Contains(":")) {
+								pos = pos.Split("/",2)[0];
+							}
+						}
+						if (string.IsNullOrEmpty(pos) || !pos.Contains(',')) {
+							return "incorrect use of -pos: flag '|darkgrey|" + pos + "|white|' 'box -pos:<x>,<y> <content>'";
+						}
+						string[] xy = pos.Split(',');
+						try {
+							int x = int.Parse(xy[0]);
+							int y = int.Parse(xy[1]);
+							game.input.drawBox(removeFlags(args), x, y);
+						} catch {
+							return "'" + args[1] + "'incorrect use of -pos: flag '|darkgrey|" + pos + "|white|' 'box -pos:<x - must be non null>, <y - the same> <content>'";
+						}
+					}
+					else {
+						return "unkown flag, flags are: -border:<border char>, ...";
+					}
+				} else {
+					game.input.drawBox(String.Join(" ", args).Remove(0, args[0].Length + 1));
+				}
+				return "";
+
+			default:
+				return "|darkred|unknown command '" + args[0] + "'";
+
+		}
+
+		// return "|darkred|unknown command";
+
+	}
+
+	private string removeFlags(string[] args) {
+		string retstring = "";
+		for (int i = 1; i < args.Length - 1; i ++) {
+			if (!args[i].Contains('-')) {
+				retstring += args[i];
+				if (i != args.Length - 2) retstring += " ";
+			}
+		}
+		return retstring;
+	}
+
+	private string parsePriv(string[] args, int argv) {
+
+		foreach((string, int, string) cmnd in commandList) {
+			if (args[0] == cmnd.Item1) {
+				if ((argv - 1) < cmnd.Item2) {
+					return "Too few arguments for command " + cmnd.Item1 + "! '" + cmnd.Item3 + "'";
+				}
+			}
+		}
+
+		switch(args[0]) {
+
+			case "help":
+			case "h":
+			case "?":
+				foreach((string, int, string) cmnd in commandList) {
+					game.input.print(cmnd.Item1 + ": usage => '" + cmnd.Item3 + "'");
+				}
+				return "";
+
+			case "fight":
+				if (game.State != Game.GameState.Fight && game.State == Game.GameState.Idle) {
+					var random = new System.Random();
+					game.currentEnemy = game.enemiesList[random.Next(0, game.enemiesList.Count - 1)];
+					game.State = Game.GameState.Fight;
+					return "Entering fight!!!";
+				}
+				else {
+					return game.fight.playerFights(args);
+				}
+
+			case "shop":
+				if (game.State != Game.GameState.Idle) {
+					return "Can only enter shop while idle!";
+				}
+				if (game.State != Game.GameState.Shop) {
+					game.State = Game.GameState.Shop;
+					return "Entering shop.";
+				}
+				else {
+					return "Already shopping!";
+				}
+
+			case "sell":
+				if (game.State != Game.GameState.Shop) {
+					return "Who are you trying to sell to?";
+				}
+				Item itemtosell = game.status.inventory.Find(Item => game.input.parser.getStringFrom(Item.name).ToLower() == String.Join(' ', args, 1, args.Length - 1).ToLower());
+				if (itemtosell != null) {
+					game.status.inventory.Remove(itemtosell);
+					game.status.payBytes((int)(itemtosell.price * 0.6f), 5);
+					return "You sold " + itemtosell.name + " for |magenta|" + (int) ((float)itemtosell.price * 0.6f) + "|white|.|darkmagenta|50|white|B$.";
+				} else {
+					return "That item is not in your inventory.";
+				}
+
+			case "buy":
+				if (game.State != Game.GameState.Shop) {
+					return "There is nothing to buy here.";
+				}
+				Item itemret = game.currentShop.wares.Find(Item => game.input.parser.getStringFrom(Item.name).ToLower() == String.Join(' ', args, 1, args.Length - 1).ToLower());
+				if (itemret != null) {
+					if (game.status.byteCoin >= itemret.price) {
+						game.status.inventory.Add(itemret);
+						game.status.payBytes(-itemret.price, 0);
+						game.currentShop.wares.Remove(itemret);
+						return "You bought " + itemret.name + "!";
+					} else {
+						return "You can't afford " + itemret.name + "!";
+					}
+				}
+				else {
+					switch(args[1]) {
+						case "any":
+							return "You can't expect the game to make choices for you. Write the name of the item you wish to purchase.";
+
+						case "none":
+							return "What? Your call I guess.";
+
+						case "all":
+							int price = 0;
+							foreach(Item it in game.currentShop.wares) {
+								price += it.price;
+							}
+							game.input.print("That'll be |magenta|" + price + "|white|B$, are you sure?");
+							string answer = game.input.getString().ToLower();
+							switch (answer) {
+								case "yes":
+								case "ya":
+								case "y":
+								case "yea":
+								case "yeah":
+									if (game.status.byteCoin < price) {
+										return "You can't afford all this!";
+									}
+									else {
+										foreach(Item it in game.currentShop.wares) {
+											game.status.inventory.Add(it);
+											game.currentShop.wares = new List<Item>();
+										}
+									}
+									return "Purchased all items from the shop! Wowza!";
+
+								case "no":
+								case "nah":
+								case "n":
+								case "nope":
+									return "You wisely decided not to buy everything at once.";
+
+								case "i cant afford that":
+								case "i can't afford that":
+								case "too poor":
+									return "How wise of you.";
+
+								default:
+									return "What was that? We're going to assume you meant no.";
+							}
+						}
+
+					return "Couldn't find item " + args[1] + " in shop.";
+				}
+
+			case "run":
+				if (game.State == Game.GameState.Fight) {
+					game.Run();
+					return "Running from fight...";
+				}
+				if (game.State == Game.GameState.Shop) {
+					game.State = Game.GameState.Idle;
+					return "You run out of the shop.";
+				}
+				if (game.State != Game.GameState.Fight) {
+					return "Where are you trying to run to?";
+				}
+				return "You ran, but where to?";
+
+			case "use":
+				Item itemfound = game.status.inventory.Find(Item => game.input.parser.getStringFrom(Item.name).ToLower() == String.Join(' ', args, 1, args.Length - 1).ToLower());
+				if (itemfound != null) {
+					game.status.inventory.Remove(itemfound);
+					game.Use(itemfound);
+					return "You use " + itemfound.name + "!!!";
+				}
+				else {
+					if (game.itemsList.Find(Item => game.input.parser.getStringFrom(Item.name).ToLower() == String.Join(' ', args, 1, args.Length - 1).ToLower()) != null) {
+						return "That item isn't in your inventory.";
+					} else {
+						try {
+							int invIndex = int.Parse(args[1]);
+							try {
+								Item itemfoundIndex = game.status.inventory[invIndex - 1];
+								game.status.inventory.Remove(itemfoundIndex);
+								game.Use(itemfoundIndex);
+								return "You use " + itemfound.name + "!!!";
+							} catch {
+								return "Unknown item index, check item indeces using 'inv' command.";
+							}
+						} catch {
+							return "Don't know that one. Check to see if you spelt the name of the item right. Use 'inv' to open your inventory";
+						}
+					}
+				}
+
+			case "back":
+			case "exit":
+				if (game.State == Game.GameState.Fight) {
+					return "You can't exit a fight... did you mean 'run?'";
+				}
+				if (game.State == Game.GameState.Shop) {
+					game.State = Game.GameState.Idle;
+					return "You leave the shop.";
+				}
+				if (game.State != Game.GameState.Fight) {
+					return "You look around for exits but there are none.";
+				}
+				return "|red|You can never exit.|white|";
+
+			case "me":
+			case "m":
+				game.input.print("Health: " + (game.status.health < 5 ? "|red|" : "|cyan|") + game.status.health + "|white|/|gray|" + game.status.maxHealth);
+				game.input.print("Resistance: " + game.status.resistance);
+				game.input.print("Damage: " + game.status.damage);
+				game.input.print("Evasion: " + game.status.evasion);
+				game.input.print("Speed: " + game.status.speed);
+				return "";
+
+			case "inv":
+				if (game.status.inventory.Count < 1) {
+					return "Inventory empty!";
+				}
+				int index = 1;
+				foreach(Item it in game.status.inventory) {
+					game.input.print(index.ToString() + ": " + it.name + "|white|");
+					index ++;
+				}
+				return "";
+
+			case "q":
+			case "quit":
+				game.running = false;
+				break;
+
+			case "cls":
+				System.Console.Clear();
+				return "";
+
+			case "box":
+				game.input.drawBox(String.Join(" ", args).Remove(0, args[0].Length + 1));				
+				return "";
+
+			default:
+				return "|red|unknown command '" + args[0] + "'";
+
+		}
+
+		return "";
+
+	}
+
+	private bool hasFlags(string[] args) {
+		foreach(string str in args) {
+			if (str.Contains('-')) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private string[] getFlags(string[] args) {
+		List<string> array = new List<string>();
+		foreach(string str in args) {
+			if (str.Contains('-')) {
+				array.Add(str.Split('-',2)[1]);
+			}
+		}
+		return array.ToArray();
+	}
+
+
+}

@@ -1,0 +1,5 @@
+
+
+Enemy:
+	basehp, dmg, etc...
+	xp given, money given, rarity
