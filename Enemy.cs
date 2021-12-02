@@ -47,11 +47,17 @@ public class Enemy {
 		this.baseStrength = basestr;
 		this.baseEvasion = baseevas;
 		this.baseResistance = baseres;
+
+		this.coinsGiven = coinsGiven;
+		this.xpGiven = xpGiven;
+
 		this.maxHp = maxhp;
 		this.Hp = maxhp;
+
 		this.name = name;
 		this.tag = name.ToLower().Replace(" ", "_");
 		this.description = desc;
+
 		this.currentEffects = new List<Effect>();
 		this.effectsImmune = new List<Effect>();
 		if (!string.IsNullOrEmpty(effectimmune) || !effectimmune.Contains('/')) {
@@ -66,6 +72,16 @@ public class Enemy {
 		}
 	}
 
+
+	public void reset() {
+		currentEffects = new List<Effect>();
+		this.Hp = this.maxHp;
+		this.Dmg = this.baseDmg;
+		this.Resistance = this.baseResistance;
+		this.Speed = this.baseSpeed;
+		this.Strength = this.baseStrength;
+		this.Evasion = this.baseEvasion;
+	}
 
 	public void Update() {
 		updateEffects();

@@ -25,16 +25,17 @@ public class Commands {
 	}
 
 	(string, int, string)[] commandList = new (string, int, string)[] {
-		("box", 1, "box <content>"), 
-		("cls", 0, " "), 
-		("quit", 0, " "),
+		("box", 1, "box <content>: draws a box with your input in it"), 
+		("cls", 0, "clears the screen"), 
+		("quit", 0, "quits the game"),
 		("help", 0, "help + opt:<page number> + opt:<command>"),
-		("me", 0, " "),
-		("inv", 0, " "),
-		("run", 0, " "), ("exit", 0, "exit"), ("fight", 0, " "),
-		("shop", 0, " "), ("buy", 1, "buy <item name>"),
-		("sell", 1, "sell <item name>"),
-		("use", 1, "use <item>"),
+		("me", 0, "gives details on the current player"),
+		("inv", 0, "shows you the contents of your inventory"),
+		("run", 0, "run away from a fight"), ("exit", 0, "exits the current area"), ("fight", 0, "enters the fighting state"),
+		("shop", 0, "opens the shop"), ("buy", 1, "buy <item name> => buys from the shop the item given, special cases are: 'all'"),
+		("sell", 1, "sell <item name> => sells the item given"),
+		("use", 1, "use <item> => uses the item given"),
+		("detailed", 0, "Sets the stats list to be printed in more detail"),
 	};
 
 	(string, int, string)[] commandListCmd = new (string, int, string)[] {
@@ -44,7 +45,8 @@ public class Commands {
 		("pay", 1, "pay <byteCoins>.<byteCents>"), ("item", 0, ""),
 		("gamestate", 1, "gamestate <Fight/Idle/Shop>"),
 		("give", 1, "give <item tag>"), ("resetshop", 0, ""),
-		("dmg", 1, "dmg <float>"),
+		("dmg", 1, "dmg <float>"), ("ko", 0, "ko <warning: can only be used during a fight."),
+		("xp", 1, "xp <int>"), ("lvl", 1, "lvl <levels to add>"), ("lvlset", 1, "lvlset <int>"),
 	};
 
 	public string parseCommand(string s) {
@@ -78,10 +80,14 @@ public class Commands {
 
 	private string parsePrivCmd(string[] args, int argv) {
 
+		(string, int, string) currentCommand;
+
 		foreach((string, int, string) cmnd in commandListCmd) {
 			if (args[0] == cmnd.Item1) {
 				if ((argv - 1) < cmnd.Item2) {
 					return "Too few arguments for command " + cmnd.Item1 + "! '" + cmnd.Item3 + "'";
+				} else {
+					currentCommand = cmnd;
 				}
 			}
 		}
@@ -104,6 +110,44 @@ public class Commands {
 					return "damaged player for |darkblue|" + dmg.ToString() + "|white|hp.";
 				} catch {
 					return "incorrect argument for command 'hurt': 'hurt <float>'";
+				}
+
+			case "xp":
+				try {
+					int xp = int.Parse(args[1]);
+					game.status.addXp(xp);
+					return "added |darkred|" + xp.ToString() + "|white|xp.";
+				} catch {
+					return "incorrect argument for command 'xp': 'xp <int>'";
+				}
+
+			case "lvl":
+			case "level":
+				try {
+					int lvl = int.Parse(args[1]);
+					game.status.level += lvl;
+					return "added |red|" + lvl.ToString() + "|white|levels.";
+				} catch {
+					return "incorrect argument for command 'level': 'level <int>'";
+				}
+
+			case "lvlset":
+			case "levelset":
+				try {
+					int lvll = int.Parse(args[1]);
+					game.status.level = lvll;
+					return "set player level to |red|" + lvll.ToString() + "|white|levels.";
+				} catch {
+					return "incorrect argument for command 'levelset': 'level <int>'";
+				}
+
+			case "ko":
+				if (game.State == Game.GameState.Fight) {
+					game.currentEnemy.Hp = 0;
+					return "The current enemy has been removed.";
+				}
+				else {
+					return "You can only use this command during a fight to defeat the current enemy!";
 				}
 
 			case "dmg":
@@ -327,6 +371,10 @@ public class Commands {
 				}
 				return "";
 
+			case "detailed":
+				game.status.toggleDetailedMode();
+				return "Toggled detailed character readings.";
+
 			case "fight":
 				if (game.State != Game.GameState.Fight && game.State == Game.GameState.Idle) {
 					var random = new System.Random();
@@ -541,6 +589,9 @@ public class Commands {
 			if (str.Contains('-')) {
 				array.Add(str.Split('-',2)[1]);
 			}
+		}
+		if (array.Count < 1) {
+			array.Add("NO FLAGS");
 		}
 		return array.ToArray();
 	}

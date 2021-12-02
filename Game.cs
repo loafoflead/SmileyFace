@@ -9,29 +9,36 @@ using static Elements;
 
 public class Game {
 
+
+	/* public objects */
 	public Input input;
-	public Commands cmnd;
+
 	public GameStatus status;
+
 	public Fight fight;
 
+	/* private objects */
+	private Commands cmnd;
 
+	private DatabaseManager data;
+
+
+
+	/* STATUS VARS */
 	public bool running;
 
-	public string playerName;
-	public short playerHealth;
-	public short playerMaxHealth;
 
+	/* ENTITY VARS */
 	public Enemy currentEnemy;
 	public Shop currentShop;
 
-	public const int MaximumEnemies = 5000;
+	/* final values */
+	private const int maximumEnemies = 5000;
+	private const int maximumItems = 5000;
 
+	/* database values */
 	public List<Enemy> enemiesList;
 	public List<Item> itemsList;
-
-	public string connectionString = "";
-	public SQLiteConnection con;
-	SQLiteCommand cmd;
 
 	public enum GameState {
 		Idle,
@@ -39,64 +46,8 @@ public class Game {
 		Fight,
 	}
 
+	/* gamestate value */
 	public GameState State;
-
-
-	public List<Enemy> getEnemyList(string dbName) {
-		if (!connectDB(dbName)) 
-			return null;
-
-		List<Enemy> to_return = new List<Enemy>();
-
-		SQLiteDataReader reader = executeSQLiteRequest(dbName, "SELECT * FROM Enemies LIMIT " + MaximumEnemies.ToString());
-
-		while (reader.Read()) {
-			to_return.Add(
-				new Enemy(
-				reader.GetInt32(1), // damage
-				reader.GetInt32(2),	// base strength
-				reader.GetInt32(3), // base speed
-				reader.GetInt32(4), // base evasion
-				reader.GetInt32(5), // base resistance
-				reader.GetInt32(6), // max hp
-				reader.GetString(7), // name
-				reader.GetString(8), // description
-				reader.GetString(9) // immunes
-				)
-			);
-		}
-
-		reader.Close();
-
-		return to_return;
-
-	}
-
-	public List<Item> getItemsList(string dbName) {
-		if (!connectDB(dbName)) 
-			return null;
-
-		List<Item> to_return = new List<Item>();
-
-		SQLiteDataReader reader = executeSQLiteRequest(dbName, "SELECT * FROM Items LIMIT " + MaximumEnemies.ToString());
-
-		while (reader.Read()) {
-			to_return.Add(
-				new Item(
-					reader.GetString(1),
-					reader.GetString(2),
-					getEffectStr(reader.GetString(3), reader.GetInt32(4), reader.GetInt32(5)),
-					reader.GetInt32(6),
-					reader.GetInt32(7)
-				)
-			);
-		}
-
-		reader.Close();
-
-		return to_return;
-
-	}
 
 	public void Run() {
 		State = GameState.Idle;
@@ -104,19 +55,25 @@ public class Game {
 
 	public Game() {
 
-		itemsList = getItemsList(@"URI=file:.\sqlite.db");
-
 		input = new Input();
 		input.xLimit = Console.WindowWidth - 50;
+
 		cmnd = new Commands(this);
+
 		status = new GameStatus(this);
+
 		fight = new Fight(this);
 
-		enemiesList = getEnemyList(@"URI=file:.\sqlite.db");
+		data = new DatabaseManager();
+
+		enemiesList = data.getEnemyList(@"URI=file:.\sqlite.db", maximumEnemies);
+		itemsList = data.getItemsList(@"URI=file:.\sqlite.db", maximumItems);
 
 		currentShop = new Shop(itemsList);
+
+
 		running = true;
-		
+
 	}
 
 	public int yppos = 0;
@@ -138,12 +95,13 @@ public class Game {
 			if (!string.IsNullOrEmpty(res)) {
 				input.print(res);
 			}
+			status.resetStats();
 			evaluateTurnEnd();
 			yppos = Console.CursorTop;
 
 			Console.ForegroundColor = ConsoleColor.White;
 
-			input.verticalLine(input.xLimit - 1, 0, Console.WindowHeight, '|');
+			input.verticalLine(input.xLimit - 1, 0, ypos + Console.WindowHeight, '|');
 
 			stats();
 
@@ -153,19 +111,24 @@ public class Game {
 
 
 	private void evaluateTurnEnd() {
-		if (currentEnemy == null) {
+		if (State != GameState.Fight) {
 			return;
 		}
 		if (currentEnemy.Hp == 0) {
 			input.printf("|white/cyan|YOU WIN!!!!!!!!!!", Format.center);
 			status.payBytes(currentEnemy.coinsGiven, 0);
 			int levelsUp = status.addXp(currentEnemy.xpGiven);
-			input.print("You gained |magenta|" + currentEnemy.coinsGiven + "|white|B$! and |darkcyan/white|" + currentEnemy.xpGiven + "|white|xp!");
-			if (levelsUp != 0) {
+			input.print("You gained |magenta|" + currentEnemy.coinsGiven + "|white|B$! and |darkred|" + currentEnemy.xpGiven + "|white|xp!");
+			if (levelsUp !> 0) {
 				input.print("You leveled up " + levelsUp + " time" + ((levelsUp != 1) ? "s" : "") + "!");
 			}
+			if (levelsUp == -1) {
+				input.print("You reached max level! Added |magenta|99|white|B$ to your balance!");
+			}
 			State = GameState.Idle;
-			currentEnemy = null;
+			var random = new System.Random();
+			currentEnemy.reset();
+			currentEnemy = enemiesList[random.Next(0, enemiesList.Count)];
 		}
 	}
 
@@ -235,56 +198,6 @@ public class Game {
 
 	public void End() {
 		running = false;
-		con.Close();
-	}
-
-
-
-
-
-
-
-
-
-
-
-
-
-	public bool connectDB(string dbname) {
-		con = new SQLiteConnection(dbname);
-		con.Open();
-		if (con != null) {
-			connectionString = dbname;
-			return true;
-		}
-		else {
-			return false;
-		}
-	}
-
-	public void executeSQLiteCommandNoReturn(string dbName, string command) {
-		if (!connectDB(dbName)) {
-			return;
-		}
-
-		if (cmd == null) {
-			cmd = new SQLiteCommand(con);
-		}
-
-		cmd.CommandText = command;
-		cmd.ExecuteNonQuery();
-	}
-
-	public SQLiteDataReader executeSQLiteRequest(string dbName, string request) {
-		if (!connectDB(dbName)) {
-			return null;
-		}
-
-		if (cmd == null) {
-			cmd = new SQLiteCommand(con);
-		}
-
-		cmd.CommandText = request;
-		return cmd.ExecuteReader();
+		data.closeConnection();
 	}
 }

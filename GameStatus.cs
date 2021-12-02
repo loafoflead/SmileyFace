@@ -10,7 +10,12 @@ public class GameStatus {
 
 	private Game g;
 
+	/* the base threshold before which a level up happens, which is multiplied by the current level */
 	public static int levelUpThreshold = 10;
+	/* the amount by which the level is divided then added to one to multipy by the base stats */
+	private static int levelUpDivisionPercentage = 3; // 2 is quite good havn't tested 3 yet but seems fine, need to tweak the rates at which things change	
+	/* whether or not to show detailed readings to the player */
+	private bool detailedMode = false; 
 
 	public List<Item> inventory;
 
@@ -47,18 +52,25 @@ public class GameStatus {
 	}*/
 
 	public void resetStats() {
-		damage = baseDamage * (1 + level / 10);
-		speed = baseSpeed * (1 + level / 10);
-		evasion = baseEvasion * (1 + level / 10);
-		resistance = baseResistance * (1 + level / 10);
+		damage = baseDamage * (1 + level / levelUpDivisionPercentage);
+		speed = baseSpeed * (1 + level / levelUpDivisionPercentage);
+		evasion = baseEvasion * (1 + level / levelUpDivisionPercentage);
+		resistance = baseResistance * (1 + level / levelUpDivisionPercentage);
+		effectEffects();
 	}
 
+	private void effectEffects() {}
+
 	public void levelUp() {
-		damage = baseDamage * (1 + level / 10);
-		speed = baseSpeed * (1 + level / 10);
-		evasion = baseEvasion * (1 + level / 10);
-		resistance = baseResistance * (1 + level / 10);
+		if (this.level == 99) {
+			payBytes(99, 0);
+			return;
+		}
 		level ++;
+		damage = baseDamage * (1.0f + level / levelUpDivisionPercentage);
+		speed = baseSpeed * (1f + level / levelUpDivisionPercentage);
+		evasion = baseEvasion * (1f + level / levelUpDivisionPercentage);
+		resistance = baseResistance * (1f + level / levelUpDivisionPercentage);
 	}
 
 	public int dealDamage(float damage) {
@@ -76,15 +88,20 @@ public class GameStatus {
 
 	public int addXp(int xp) {
 		int xps = xp;
+		int levelsUp = 0;
 		while (xps > 0) {
 			this.xp ++;
 			xps --;
 			if (this.xp > (level == 0 ? 1 : level) * levelUpThreshold) {
 				levelUp();
+				levelsUp ++;
+				if (this.level == 99) {
+					levelsUp = -1;
+				}
 				this.xp = 0;
 			}
 		}
-		return 0;
+		return levelsUp;
 	}
 
 	public int payBytes(int coins, int cents) {
@@ -101,17 +118,42 @@ public class GameStatus {
 		return 1;
 	}
 
+	public void toggleDetailedMode() {
+		if (this.detailedMode == true) {
+			this.detailedMode = false;
+		} else {
+			this.detailedMode = true;
+		}
+	}
+
 	public void printReadouts() {
 
 		string finalString = "";
 
-		finalString += "Health: " + (health < 5 ? "|red|" : "|cyan|") + health + "|white|/|gray|" + maxHealth + "\n";
-		finalString += "Resistance: " + resistance + "\n";
-		finalString += "Damage: " + damage + "\n";
-		finalString += "Evasion: " + evasion + "\n";
-		finalString += "Speed: " + speed + "\n";
+		if (detailedMode == false) {
 
-		finalString += "ByteCoin: |magenta|" + byteCoin + "|white|.|darkmagenta|" + byteCents + "\n";
+			finalString += "Health: " + (health < 5 ? "|red|" : "|cyan|") + (int)health + "|white|/|gray|" + maxHealth + "\n";
+			finalString += "Resistance: " + (int)resistance + "\n";
+			finalString += "Damage: " + (int)damage + "\n";
+			finalString += "Evasion: " + (int)evasion + "\n";
+			finalString += "Speed: " + (int)speed + "\n";
+
+			finalString += "ByteCoin: |magenta|" + byteCoin + "|white|.|darkmagenta|" + byteCents + "\n";
+			finalString += "LVL: |red|" + this.level + "|white| [xp:|darkred|" + this.xp + "|white|]\n";
+
+		} else {
+
+			finalString += "Health: " + (health < 5 ? "|red|" : "|cyan|") + health + "|white|/|gray|" + maxHealth + "\n";
+			finalString += "Resistance: " + resistance + "\n";
+			finalString += "Damage: " + damage + "\n";
+			finalString += "Evasion: " + evasion + "\n";
+			finalString += "Speed: " + speed + "\n";
+
+			finalString += "ByteCoin: |magenta|" + byteCoin + "|white|.|darkmagenta|" + byteCents + "\n";
+			finalString += "LVL: |red|" + this.level + "|white| [xp:|darkred|" + this.xp + "|white|]\n";
+
+		}
+
 
 		//finalString += "#####\n#   #\n#####\n";
 
@@ -124,7 +166,7 @@ public class GameStatus {
 	public int byteAmethyts = 0;
 
 	public int xp;
-	public int level;
+	public float level;
 
 	public float health;
 	public int maxHealth;
