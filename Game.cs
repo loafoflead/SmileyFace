@@ -101,7 +101,7 @@ public class Game {
 
 			Console.ForegroundColor = ConsoleColor.White;
 
-			input.verticalLine(input.xLimit - 1, 0, ypos + Console.WindowHeight, '|');
+			// input.verticalLine(input.xLimit - 1, 0, ypos + Console.WindowHeight, '|');
 
 			stats();
 
@@ -161,8 +161,10 @@ public class Game {
 				if (currentShop.wares.Count < 1) {
 					finalString += "SHOP EMPTY, COME BACK ANOTHER TIME";
 				} else {
+					int index = 1;
 					foreach(Item it in currentShop.wares) {
-						finalString += it.name + " -> |mag|" + it.price + "|w|B$ \n ";
+						finalString += index.ToString() + ": " + it.name + " -> |mag|" + it.price + "|w|B$ \n ";
+						index ++;
 					}	
 				}
 				input.drawBox(finalString, input.xLimit + 2, ypos + 15);

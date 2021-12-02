@@ -19,7 +19,7 @@ public class Fight {
 		float enemyPrevHp = game.currentEnemy.Hp;
 
 		int status = game.currentEnemy.attack(game.status.damage);
-		string to_ret =  "Attacked enemy for |red|" + game.status.damage + "|white|dmg!!!\n";
+		string to_ret =  "Attacked enemy for |red|" + (int)game.status.damage + "|white|dmg!!!\n";
 
 		to_ret += "The enemy lost |cyan|" + (game.currentEnemy.Hp - enemyPrevHp) + "|white|hp, leaving it on |yellow|" + game.currentEnemy.Hp + "|white|hp.\n";
 
@@ -32,7 +32,7 @@ public class Fight {
 				break;
 
 			case 2:
-				to_ret += "The enemy reached |yellow|0|white|hp!";
+				to_ret += "The enemy is on |yellow|0|white|hp!";
 				break;
 
 			default:

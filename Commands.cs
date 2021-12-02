@@ -39,14 +39,15 @@ public class Commands {
 	};
 
 	(string, int, string)[] commandListCmd = new (string, int, string)[] {
-		("enemy", 0, "enemy + opt:<-v/verbose>/<-t/tags>"), ("echo", 1, "echo <message>"), 
-		("box", 1, "box opt:<-border:[char]> <content>"), ("recttest", 0, "recttest"),
-		("postest", 0, " "), ("hurt", 1, "hurt <float>"),
-		("pay", 1, "pay <byteCoins>.<byteCents>"), ("item", 0, ""),
+		("enemy", 0, "enemy + opt:<-v/verbose>/<-t/tags> -> lists the current enemies in the game."), ("echo", 1, "echo <message>"), 
+		("box", 1, "box opt:<-border:[char]/...> <content>"), ("recttest", 0, "creates a rectangle to test drawBox() function"),
+		("postest", 0, "tests printing at a certain position"), ("hurt", 1, "hurt <float>"),
+		("pay", 1, "pay <byteCoins>.<byteCents>"), ("item", 0, "lists all items in the game. opt flags: <-t >> show item tags/...>"),
 		("gamestate", 1, "gamestate <Fight/Idle/Shop>"),
-		("give", 1, "give <item tag>"), ("resetshop", 0, ""),
+		("give", 1, "give <item tag>"), ("resetshop", 0, "resets the current shop"),
 		("dmg", 1, "dmg <float>"), ("ko", 0, "ko <warning: can only be used during a fight."),
 		("xp", 1, "xp <int>"), ("lvl", 1, "lvl <levels to add>"), ("lvlset", 1, "lvlset <int>"),
+		("newenemy", 0, "resets the current enemy"),
 	};
 
 	public string parseCommand(string s) {
@@ -121,12 +122,18 @@ public class Commands {
 					return "incorrect argument for command 'xp': 'xp <int>'";
 				}
 
+			case "newenemy":
+			case "nenemy":
+				var random = new System.Random();
+				game.currentEnemy = game.enemiesList[random.Next(0, game.enemiesList.Count)];
+				return "randomized current enemy";
+
 			case "lvl":
 			case "level":
 				try {
 					int lvl = int.Parse(args[1]);
 					game.status.level += lvl;
-					return "added |red|" + lvl.ToString() + "|white|levels.";
+					return "added |red|" + lvl.ToString() + "|white| levels.";
 				} catch {
 					return "incorrect argument for command 'level': 'level <int>'";
 				}
@@ -473,8 +480,24 @@ public class Commands {
 									return "What was that? We're going to assume you meant no.";
 							}
 						}
-
-					return "Couldn't find item " + args[1] + " in shop.";
+					try {
+						int invIndex = int.Parse(args[1]);
+						try {
+							Item itemfoundInd = game.currentShop.wares[invIndex - 1];
+							if (game.status.byteCoin >= itemfoundInd.price) {
+								game.status.inventory.Add(itemfoundInd);
+								game.status.payBytes(-itemfoundInd.price, 0);
+								game.currentShop.wares.Remove(itemfoundInd);
+								return "You bought " + itemfoundInd.name + "!";
+							} else {
+								return "You can't afford " + itemfoundInd.name + "!";
+							}
+						} catch {
+							return "Unknown item index, look at the side menu to find the item indeces.";
+						}
+					} catch {
+						return "Don't know that one. Check to see if you spelt the name of the item right. Use 'inv' to open your inventory";
+					}
 				}
 
 			case "run":
