@@ -24,6 +24,10 @@ public class Commands {
 		}
 	}
 
+	string[] jokes = new string[] {
+		"Knock knock! 'who's there?' Doctor 'Doctor who' ahahhaahahahAHAHAAH",
+	};
+
 	(string, int, string)[] commandList = new (string, int, string)[] {
 		("box", 1, "box <content>: draws a box with your input in it"), 
 		("cls", 0, "clears the screen"), 
@@ -45,6 +49,7 @@ public class Commands {
 		("formattest", 0, "tests printing formatted text <formattest2 does the same thing but with highlighting options>"),
 		("hurt", 1, "hurt <float>"),
 		("pay", 1, "pay <byteCoins>.<byteCents>"), ("item", 0, "lists all items in the game. opt flags: <-t >> show item tags/...>"),
+		("tell", 1, "tell <game object: item/enemy> gives verbose details on the item or enemy selected (use item and enemy tags)"),
 		("gamestate", 1, "gamestate <Fight/Idle/Shop>"),
 		("give", 1, "give <item tag>"), ("resetshop", 0, "resets the current shop"),
 		("dmg", 1, "dmg <float>"), ("ko", 0, "ko <warning: can only be used during a fight."),
@@ -199,6 +204,25 @@ public class Commands {
 				else {
 					return "couldn't find item " + args[1] + ".";
 				}
+
+			case "tell":
+				if (argv > 2) {
+					if (String.Join(' ', args, 1, args.Length - 1) == "me a joke") {
+						var rand = new System.Random();
+						return jokes[rand.Next(0, jokes.Length)];
+					}
+				}
+				foreach(Item it in game.itemsList) {
+					if (it.tag == args[1]) {
+						return "name: " + it.name + ", tag: " + it.tag + ", description: [...], effect given: " + it.effect_given.ToString() + ", rarity: " + it.Rarity + ".";
+					}
+				}
+				foreach(Enemy en in game.enemiesList) {
+					if (en.tag == args[1]) {
+						return "name: " + en.name + ", tag: " + en.tag + ", description: [...], dmg/basedmg: " + en.Dmg + "/" + en.baseDmg + ", hp/maxhp: " + en.Hp + "/" + en.maxHp + ", strength/basestrength: " + en.Strength + "/" + en.baseStrength + ", coinsgiven: |mag|" + en.coinsGiven + "|white|, xp: |red|" + en.xpGiven + "|white|.";
+					}
+				}
+				return "could not find that enemy or item, try retyping the name. (hint: use the 'enemy' and 'item' commands to see a list of all enemies and items)";
 
 			case "enemy":	
 				if (argv > 1) {
