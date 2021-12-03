@@ -2,21 +2,84 @@ using System;
 using System.Collections.Generic;
 using System.Collections;
 
-public class WriteParser {
+public static class WriteParser {
 
-    public ConsoleColor default_foreground_colour = ConsoleColor.White;
-    public ConsoleColor default_background_colour = ConsoleColor.Black;
+    public static ConsoleColor default_foreground_colour = ConsoleColor.White;
+    public static ConsoleColor default_background_colour = ConsoleColor.Black;
 
-    public WriteParser() {
+
+    public enum colourFormatOptions {
+        rainbow, // cycle through all colours <<works>>
+        two_colours, // make each letter in the word one of two different colours <<works>>
+        three_colours, // make each letter in the word one of three colours
+        one_colour, // just make it one colour i guess 
+        half_colour, // one half the first colour, second half the second <<works>>
+        first_and_last, // set the first and last chars to the second colour and the body to the first
+        body_only, // do the opposite of first_and_last
+    }
+
+
+    public static string formatString(string to_format, colourFormatOptions opt, string colour1, string colour2) {
+
+        string return_string = "";
+
+        int index = 1;
+        int antiIndex = Enum.GetValues(typeof(ConsoleColor)).Length - 1;
+
+        if (opt == colourFormatOptions.rainbow) {
+            foreach(char ch in to_format) {
+                return_string += "|" + ((colour2 != "") ? colour2:  getColourAtEnumIndex(index)) + "/" + ((colour1 == "highlight") ? ((colour2 == getColourAtEnumIndex(antiIndex)) ? getColourAtEnumIndex(antiIndex - 2) : getColourAtEnumIndex(antiIndex)) :"black") + "|" + ch;
+                index ++;
+                antiIndex --;
+                if (index > Enum.GetValues(typeof(ConsoleColor)).Length) {
+                    index = 1;
+                    antiIndex = Enum.GetValues(typeof(ConsoleColor)).Length - 1;
+                }
+            }
+            return return_string;
+        }
+
+        switch(opt) {
+
+            case colourFormatOptions.two_colours:
+                int mod = 1;
+                foreach(char ch in to_format) {
+                    if (mod % 2 != 0) return_string += "|" + colour1 + "|" + ch;
+                    else return_string += "|" + colour2 + "|" + ch;
+                    mod ++;
+                }
+                return return_string;
+
+            case colourFormatOptions.half_colour:   
+                int length = to_format.Length / 2;
+                for (int i = 0; i < length; i ++) {
+                    return_string += "|" + colour1 + "|" + to_format[i];
+                }
+                for (int i = length; i < to_format.Length; i ++) {
+                    return_string += "|" + colour2 + "|" + to_format[i];
+                }
+                return return_string;
+
+        }
+
+        return to_format;
 
     }
 
 
+    private static string getColourAtEnumIndex(int ind) {
+        var values = Enum.GetValues(typeof(ConsoleColor));
+        int index = 0;
+        foreach(var enumm in values) {
+            if (index == ind) {
+                return enumm.ToString().ToLower();
+            }
+            index ++;
+        }
+        return "white";
+    }
 
-
-
-
-    public string getStringFrom(string input) {
+    public static string getStringFrom(string input) {
         List<string> contents = new List<string>();
         foreach(SubString str in parseString(input)) {
             contents.Add(str.content);
@@ -24,7 +87,7 @@ public class WriteParser {
         return String.Join("", contents.ToArray());
     }
 
-    public List<SubString> parseString(string inputt) {
+    public static List<SubString> parseString(string inputt) {
 
         List<SubString> to_return = new List<SubString>();
 
@@ -101,7 +164,7 @@ public class WriteParser {
 
     }
 
-    private (ConsoleColor, ConsoleColor) getColoursFrom(string to_parse) {
+    private static (ConsoleColor, ConsoleColor) getColoursFrom(string to_parse) {
 
         ConsoleColor fg_to_ret = default_foreground_colour;
         ConsoleColor bg_to_ret = default_background_colour;
@@ -121,7 +184,7 @@ public class WriteParser {
 
     }
 
-    private ConsoleColor colourFromString(string str) {
+    private static ConsoleColor colourFromString(string str) {
 
         str = str.ToLower();
 
@@ -201,7 +264,7 @@ public class WriteParser {
 
     }
 
-    private int countChar(string str, char c) {
+    private static int countChar(string str, char c) {
         int count = 0;
         foreach (char ch in str) {
             if (ch == c) {

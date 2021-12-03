@@ -4,7 +4,6 @@ using System.Collections;
 
 public class Input {
 
-	public WriteParser parser;
 
 	public int xLimit = 0;
 
@@ -21,7 +20,6 @@ public class Input {
 
 	public Input() {
 		xLimit = Console.WindowWidth - 2;
-		parser = new WriteParser();
 	}
 
 
@@ -121,7 +119,7 @@ public class Input {
 			}
 			return;
 		}
-		foreach(WriteParser.SubString str in parser.parseString(formattedString)) {
+		foreach(WriteParser.SubString str in WriteParser.parseString(formattedString)) {
 			Console.ForegroundColor = str.fg_colour;
 			Console.BackgroundColor = str.bg_colour;
 			if (xlim != 0) {
@@ -149,7 +147,7 @@ public class Input {
 			
 			return;
 		}
-		foreach(WriteParser.SubString str in parser.parseString(formattedString)) {
+		foreach(WriteParser.SubString str in WriteParser.parseString(formattedString)) {
 			if (Console.CursorLeft > (xlim == 0 ? xLimit : xlim)) {
 				Console.WriteLine();
 				Console.SetCursorPosition(x, Console.CursorTop);
@@ -195,7 +193,7 @@ public class Input {
 		if (!s.Contains("!")) {
 			return s.Length;
 		}
-		foreach(WriteParser.SubString str in parser.parseString(s)) {
+		foreach(WriteParser.SubString str in WriteParser.parseString(s)) {
 			size += str.content.Length;
 		}
 		return size;
@@ -270,7 +268,7 @@ public class Input {
 
 		int lines = 1;
 
-		foreach(char c in parser.getStringFrom(content)) {
+		foreach(char c in WriteParser.getStringFrom(content)) {
 			longest ++;
 			if (xIndex > Console.WindowWidth - 4 || c == '\n') {
 				if (longest > prevLongest) {

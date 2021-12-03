@@ -242,8 +242,7 @@ public class Item {
 	public Item(string n, string desc, Effect effect) {
 		this.name = n;
 		this.tag = this.name.ToLower().Replace(' ', '_');
-		var parser = new WriteParser();
-		this.tag = parser.getStringFrom(this.tag);
+		this.tag = WriteParser.getStringFrom(this.tag);
 		this.description = desc;
 		this.effect_given = effect;
 		this.Rarity = 50;
@@ -252,8 +251,7 @@ public class Item {
 	public Item(string n, string desc, Effect effect, int rarity, int price) {
 		this.name = n;
 		this.tag = this.name.ToLower().Replace(' ', '_');
-		var parser = new WriteParser();
-		this.tag = parser.getStringFrom(this.tag);
+		this.tag = WriteParser.getStringFrom(this.tag);
 		this.description = desc;
 		this.effect_given = effect;
 		this.Rarity = rarity;

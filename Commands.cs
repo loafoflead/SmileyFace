@@ -41,7 +41,9 @@ public class Commands {
 	(string, int, string)[] commandListCmd = new (string, int, string)[] {
 		("enemy", 0, "enemy + opt:<-v/verbose>/<-t/tags> -> lists the current enemies in the game."), ("echo", 1, "echo <message>"), 
 		("box", 1, "box opt:<-border:[char]/...> <content>"), ("recttest", 0, "creates a rectangle to test drawBox() function"),
-		("postest", 0, "tests printing at a certain position"), ("hurt", 1, "hurt <float>"),
+		("postest", 0, "tests printing at a certain position"),
+		("formattest", 0, "tests printing formatted text <formattest2 does the same thing but with highlighting options>"),
+		("hurt", 1, "hurt <float>"),
 		("pay", 1, "pay <byteCoins>.<byteCents>"), ("item", 0, "lists all items in the game. opt flags: <-t >> show item tags/...>"),
 		("gamestate", 1, "gamestate <Fight/Idle/Shop>"),
 		("give", 1, "give <item tag>"), ("resetshop", 0, "resets the current shop"),
@@ -273,8 +275,20 @@ public class Commands {
 				game.input.drawRect(10, 10, 13, 13);
 				return "";
 
+			case "formattest":
+				game.input.print(WriteParser.formatString("benjamin james reed", WriteParser.colourFormatOptions.rainbow, "", ""));
+				game.input.print(WriteParser.formatString("benjamin james reed", WriteParser.colourFormatOptions.two_colours, "green", "red"));
+				game.input.print(WriteParser.formatString("benjamin james reed", WriteParser.colourFormatOptions.half_colour, "red", "cyan"));
+				return "|white|printed using options.rainbow, options.two_colours, and options.half_colour";
+
+			case "formattest2":
+				game.input.print(WriteParser.formatString("benjamin james reed", WriteParser.colourFormatOptions.rainbow, "highlight", "black"));
+				game.input.print(WriteParser.formatString("benjamin james reed", WriteParser.colourFormatOptions.two_colours, "green/white", "red/white"));
+				game.input.print(WriteParser.formatString("benjamin james reed", WriteParser.colourFormatOptions.half_colour, "red/white", "cyan/white"));
+				return "|white|printed using options.rainbow, options.two_colours, and options.half_colour";
+
 			case "postest":
-				game.input.print("|red,blue|hi", 0, 0);
+				game.input.print("|red/blue|hi", 0, 0);
 				return "pos_test";
 
 			case "echo":
@@ -409,7 +423,7 @@ public class Commands {
 				if (game.State != Game.GameState.Shop) {
 					return "Who are you trying to sell to?";
 				}
-				Item itemtosell = game.status.inventory.Find(Item => game.input.parser.getStringFrom(Item.name).ToLower() == String.Join(' ', args, 1, args.Length - 1).ToLower());
+				Item itemtosell = game.status.inventory.Find(Item => WriteParser.getStringFrom(Item.name).ToLower() == String.Join(' ', args, 1, args.Length - 1).ToLower());
 				if (itemtosell != null) {
 					game.status.inventory.Remove(itemtosell);
 					game.status.payBytes((int)(itemtosell.price * 0.6f), 5);
@@ -422,7 +436,7 @@ public class Commands {
 				if (game.State != Game.GameState.Shop) {
 					return "There is nothing to buy here.";
 				}
-				Item itemret = game.currentShop.wares.Find(Item => game.input.parser.getStringFrom(Item.name).ToLower() == String.Join(' ', args, 1, args.Length - 1).ToLower());
+				Item itemret = game.currentShop.wares.Find(Item => WriteParser.getStringFrom(Item.name).ToLower() == String.Join(' ', args, 1, args.Length - 1).ToLower());
 				if (itemret != null) {
 					if (game.status.byteCoin >= itemret.price) {
 						game.status.inventory.Add(itemret);
@@ -515,14 +529,14 @@ public class Commands {
 				return "You ran, but where to?";
 
 			case "use":
-				Item itemfound = game.status.inventory.Find(Item => game.input.parser.getStringFrom(Item.name).ToLower() == String.Join(' ', args, 1, args.Length - 1).ToLower());
+				Item itemfound = game.status.inventory.Find(Item => WriteParser.getStringFrom(Item.name).ToLower() == String.Join(' ', args, 1, args.Length - 1).ToLower());
 				if (itemfound != null) {
 					game.status.inventory.Remove(itemfound);
 					game.Use(itemfound);
 					return "You use " + itemfound.name + "!!!";
 				}
 				else {
-					if (game.itemsList.Find(Item => game.input.parser.getStringFrom(Item.name).ToLower() == String.Join(' ', args, 1, args.Length - 1).ToLower()) != null) {
+					if (game.itemsList.Find(Item => WriteParser.getStringFrom(Item.name).ToLower() == String.Join(' ', args, 1, args.Length - 1).ToLower()) != null) {
 						return "That item isn't in your inventory.";
 					} else {
 						try {
