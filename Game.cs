@@ -88,7 +88,22 @@ public class Game {
 
 		height = Console.WindowHeight;
 
+		Console.SetCursorPosition(0, yppos);
+		status.resetStats();
+		yppos = Console.CursorTop;
+
+		Console.ForegroundColor = ConsoleColor.White;
+
+		// input.verticalLine(input.xLimit - 1, 0, ypos + Console.WindowHeight, '|');
+
+		stats();
+
 		while(running) {
+			if (fight.currentTurn == Fight.Turn.Enemy) {
+				Console.SetCursorPosition(0, yppos);
+				fight.enemyTurn();
+				continue;
+			}
 			string inputt = input.getString();
 			Console.SetCursorPosition(0, yppos);
 			string res = cmnd.parseCommand(inputt);

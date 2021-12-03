@@ -94,6 +94,20 @@ public class Input {
 		printToScr(s);
 	}
 
+	public void printnln(string s) {
+		printToScr(s, false);
+	}
+
+	public void movex(int move) {
+		if (Console.CursorLeft + move >= Console.WindowWidth) {
+			move = Console.CursorLeft - move;
+		}
+		if (Console.CursorLeft + move <= 0) {
+			move = Console.CursorLeft - move;
+		}
+		Console.SetCursorPosition(Console.CursorLeft + move, Console.CursorTop);
+	}
+
 	private void printToScr(string formattedString, bool newline = true, int xlim = 0) {
 		if (string.IsNullOrEmpty(formattedString) && newline == false) {
 			return;
