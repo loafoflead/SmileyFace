@@ -17,6 +17,10 @@ public class Fight {
 		currentTurn = Turn.Player;
 	}
 
+	private string[] attack_verbs = new string[] {
+		"lunges", "dives", "stabs",
+	};
+
 	public string playerFights(string[] args) {
 
 		float enemyPrevHp = game.currentEnemy.Hp;
@@ -42,8 +46,6 @@ public class Fight {
 				break;
 		}	
 
-		currentTurn = Turn.Enemy;
-
 		return to_ret;
 
 		/*if (args.Length == 2) {
@@ -58,7 +60,30 @@ public class Fight {
 
 	}
 
+	public void fightStart() {
+
+		if (game.status.speed >= game.currentEnemy.Speed) {
+			fastest = Turn.Player;
+		} else {
+			fastest = Turn.Enemy;
+		}
+
+	}
+
+	private Turn fastest;
+
+	public Turn nextTurn() {
+		if (fastest == null) {
+			return Turn.Player;
+		}
+		return fastest;
+	}
+
 	public int enemyTurn() {
+
+		if (game.State != Game.GameState.Fight) {
+			return -1;
+		}
 
 		var rand = new System.Random();
 
@@ -74,13 +99,24 @@ public class Fight {
 			game.input.printnln("\b\\\b");
 			Thread.Sleep(200);
 		}
+		game.input.print("");
 
 		System.Console.CursorVisible = true;
 
 		switch (whatWillTheyDo) {
 
 			case 1:
-				
+				int playerPrevHp = (int)game.status.health;
+				game.input.print("The enemy decides to attack!");
+				Thread.Sleep(500);
+				game.input.print("The " + game.currentEnemy.name +  " " + attack_verbs[rand.Next(0, attack_verbs.Length)] + " at you!");
+				game.status.dealDamage(game.currentEnemy.Dmg);
+				game.input.print("The " + game.currentEnemy.name + " attacked you for |red|" + (int)game.currentEnemy.Dmg + "|white|dmg!!!");
+				game.input.print("You lost |cyan|" + (int)(game.status.health - playerPrevHp) + "|white|hp, leaving you on |yellow|" + (int)game.status.health + "|white|hp.");
+				break;
+
+			default:
+				game.input.print("The enemy chose a behaviour i havn't programmed in yet. >> maybe look for the next update >>");
 				break;
 
 		}

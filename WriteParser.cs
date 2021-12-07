@@ -21,13 +21,21 @@ public static class WriteParser {
 
     public static string formatString(string to_format, colourFormatOptions opt, string colour1, string colour2) {
 
+        var rand = new System.Random();
+
         string return_string = "";
 
-        int index = 1;
+        int index = rand.Next(1, 6);
         int antiIndex = Enum.GetValues(typeof(ConsoleColor)).Length - 1;
+
+        to_format = getStringFrom(to_format);
 
         if (opt == colourFormatOptions.rainbow) {
             foreach(char ch in to_format) {
+                if (ch == ' ') {
+                    return_string += " ";
+                    continue;
+                }
                 return_string += "|" + ((colour2 != "") ? colour2:  getColourAtEnumIndex(index)) + "/" + ((colour1 == "highlight") ? ((colour2 == getColourAtEnumIndex(antiIndex)) ? getColourAtEnumIndex(antiIndex - 2) : getColourAtEnumIndex(antiIndex)) :"black") + "|" + ch;
                 index ++;
                 antiIndex --;

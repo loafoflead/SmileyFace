@@ -40,6 +40,7 @@ public class Commands {
 		("sell", 1, "sell <item name> => sells the item given"),
 		("use", 1, "use <item> => uses the item given"),
 		("detailed", 0, "Sets the stats list to be printed in more detail"),
+		("skip", 0, "used to skip the current turn. Can also be used as 'skip turn'"),
 	};
 
 	(string, int, string)[] commandListCmd = new (string, int, string)[] {
@@ -55,6 +56,7 @@ public class Commands {
 		("dmg", 1, "dmg <float>"), ("ko", 0, "ko <warning: can only be used during a fight."),
 		("xp", 1, "xp <int>"), ("lvl", 1, "lvl <levels to add>"), ("lvlset", 1, "lvlset <int>"),
 		("newenemy", 0, "resets the current enemy"),
+		("currentenemy", 0, "gives information on the current enemy"),
 	};
 
 	public string parseCommand(string s) {
@@ -134,6 +136,14 @@ public class Commands {
 				var random = new System.Random();
 				game.currentEnemy = game.enemiesList[random.Next(0, game.enemiesList.Count)];
 				return "randomized current enemy";
+
+			case "curentenemy":
+			case "curenemy":
+			case "cenemy":
+				if (game.currentEnemy == null) {
+					return "there is currently no enemy in the game";
+				}
+				return parsePrivCmd(String.Format("tell {0}", game.currentEnemy.tag).Split(" "), 2);
 
 			case "lvl":
 			case "level":
@@ -219,7 +229,7 @@ public class Commands {
 				}
 				foreach(Enemy en in game.enemiesList) {
 					if (en.tag == args[1]) {
-						return "name: " + en.name + ", tag: " + en.tag + ", description: [...], dmg/basedmg: " + en.Dmg + "/" + en.baseDmg + ", hp/maxhp: " + en.Hp + "/" + en.maxHp + ", strength/basestrength: " + en.Strength + "/" + en.baseStrength + ", coinsgiven: |mag|" + en.coinsGiven + "|white|, xp: |red|" + en.xpGiven + "|white|.";
+						return "name: " + en.name + ", tag: " + en.tag + ", description: [...], dmg/basedmg: |darkcyan|" + en.Dmg + "|white|/|darkmagenta|" + en.baseDmg + "|white|, hp/maxhp: |green|" + en.Hp + "|white|/|darkgreen|" + en.maxHp + "|white|, strength/basestrength: |darkred|" + en.Strength + "|white|/|darkgrey|" + en.baseStrength + "|white|, speed/basespeed: |blue|" + en.Speed + "|white|/|darkblue|" + en.baseSpeed + "|white|, coinsgiven: |mag|" + en.coinsGiven + "|white|, xp: |red|" + en.xpGiven + "|white|.";
 					}
 				}
 				return "could not find that enemy or item, try retyping the name. (hint: use the 'enemy' and 'item' commands to see a list of all enemies and items)";
@@ -420,16 +430,29 @@ public class Commands {
 				game.status.toggleDetailedMode();
 				return "Toggled detailed character readings.";
 
+			case "rainbow":
+				game.input.toggleRainbowMode();
+				if (argv > 1) {
+					if (args[1] == "h") {
+						game.input.toggleHighlightRainbow();
+					}
+				}
+				return "Toggled rainbow printouts.";
+
 			case "fight":
 				if (game.State != Game.GameState.Fight && game.State == Game.GameState.Idle) {
 					var random = new System.Random();
 					game.currentEnemy = game.enemiesList[random.Next(0, game.enemiesList.Count - 1)];
 					game.State = Game.GameState.Fight;
+					game.fight.fightStart();
 					return "Entering fight!!!";
 				}
 				else {
 					return game.fight.playerFights(args);
 				}
+
+			case "skip":
+				return "You skipped the current turn!";
 
 			case "shop":
 				if (game.State != Game.GameState.Idle) {

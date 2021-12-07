@@ -7,6 +7,8 @@ using System;
 using static Input;
 using static Elements;
 
+using static WriteParser;
+
 public class Game {
 
 
@@ -102,6 +104,17 @@ public class Game {
 			if (fight.currentTurn == Fight.Turn.Enemy) {
 				Console.SetCursorPosition(0, yppos);
 				fight.enemyTurn();
+				Console.ForegroundColor = ConsoleColor.White;
+				yppos = Console.CursorTop;
+				status.resetStats();
+				evaluateTurnEnd();
+				yppos = Console.CursorTop;
+
+				Console.ForegroundColor = ConsoleColor.White;
+
+				stats();
+
+				fight.currentTurn = Fight.Turn.Player;
 				continue;
 			}
 			string inputt = input.getString();
@@ -116,6 +129,9 @@ public class Game {
 
 			Console.ForegroundColor = ConsoleColor.White;
 
+			fight.currentTurn = fight.nextTurn();
+
+
 			// input.verticalLine(input.xLimit - 1, 0, ypos + Console.WindowHeight, '|');
 
 			stats();
@@ -129,6 +145,7 @@ public class Game {
 		if (State != GameState.Fight) {
 			return;
 		}
+		var random = new System.Random();
 		if (currentEnemy.Hp == 0) {
 			input.printf("|white/cyan|YOU WIN!!!!!!!!!!", Format.center);
 			status.payBytes(currentEnemy.coinsGiven, 0);
@@ -141,9 +158,20 @@ public class Game {
 				input.print("You reached max level! Added |magenta|99|white|B$ to your balance!");
 			}
 			State = GameState.Idle;
-			var random = new System.Random();
 			currentEnemy.reset();
 			currentEnemy = enemiesList[random.Next(0, enemiesList.Count)];
+			return;
+		}
+		if (status.health <= 0.5f) {
+			input.printf(formatString("YOU LOST!!!!!!!!!!", colourFormatOptions.two_colours, "black/red", "white/red"), Format.center);
+			int coinsLost = random.Next(5, currentEnemy.coinsGiven);
+			status.payBytes(-coinsLost, 0);
+			input.print("You lost " + coinsLost + "!");
+			input.print("Returning to idle state.");
+			State = GameState.Idle;
+			currentEnemy.reset();
+			currentEnemy = enemiesList[random.Next(0, enemiesList.Count)];
+			return;
 		}
 	}
 

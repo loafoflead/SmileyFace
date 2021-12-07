@@ -70,6 +70,8 @@ public class Enemy {
 				}
 			}
 		}
+
+		this.reset();
 	}
 
 

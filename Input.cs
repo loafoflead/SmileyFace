@@ -2,10 +2,15 @@ using System;
 using System.Collections.Generic;
 using System.Collections;
 
+
+using static WriteParser;
+
 public class Input {
 
 
 	public int xLimit = 0;
+	private bool rainbow = false;
+	private bool highlightRainbow = false;
 
 	public enum Format {
 		center,
@@ -22,6 +27,22 @@ public class Input {
 		xLimit = Console.WindowWidth - 2;
 	}
 
+
+	public void toggleRainbowMode() {
+		if (this.rainbow == true) {
+			this.rainbow = false;
+		} else {
+			this.rainbow = true;
+		}
+	}	
+
+	public void toggleHighlightRainbow() {
+		if (this.highlightRainbow == true) {
+			this.highlightRainbow = false;
+		} else {
+			this.highlightRainbow = true;
+		}
+	}	
 
 	// return a string inputted by the user
 	public string getString() {
@@ -115,6 +136,9 @@ public class Input {
 			Console.WriteLine();
 			return;
 		}
+		if (rainbow) {
+			formattedString = formatString(formattedString, colourFormatOptions.rainbow, highlightRainbow ? "highlight" : "", "");
+		}
 		if (!formattedString.Contains("|")) {
 			if (newline) {
 				if (xlim != 0) {
@@ -150,6 +174,9 @@ public class Input {
 		if (string.IsNullOrEmpty(formattedString)) {
 			Console.WriteLine();
 			return;
+		}
+		if (rainbow) {
+			formattedString = formatString(formattedString, colourFormatOptions.rainbow, highlightRainbow ? "highlight" : "", "");
 		}
 		if (!formattedString.Contains("|")) {
 			

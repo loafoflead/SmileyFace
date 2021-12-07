@@ -77,6 +77,9 @@ public class GameStatus {
 		float dmg = damage;
 		if (this.resistance != 0) {
 			dmg *= -this.resistance;
+			if (dmg <= 0) {
+				return 0;
+			}
 		}
 		this.health -= dmg;
 		if (this.health < 0) {
